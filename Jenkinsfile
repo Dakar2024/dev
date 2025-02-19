@@ -1,42 +1,41 @@
-pipeline { 
+pipeline {
     agent any
-
-    environnement {
-        VENV_DIR="venv"
+    environment {
+        VENV_DIR = 'venv'
     }
-
-    stages { 
-        stage('Checkout') { 
-            steps { 
-                git branch: 'main', url: 'https://github.com/Dakar2024/dev.git' 
-            } 
-        } 
-        stage('Install Dependencies') { 
-            steps { 
-                bat 'python -m venv venv' 
-            } 
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Dakar2024/dev.git'
+            }
         }
- 
-        stage('Run Script') { 
-            steps { 
-                bat '.\\venvbin\\python TP4.py' 
-            } 
-        } 
+        stage('Setup') {
+            steps {
+                bat 'python -m venv venv'  // Crée un environnement virtuel
+                // bat '.\\venv\\Scripts\\pip install -r requirements.txt'  // Installe les dépendances
+            }
+        }
+        stage('Run Script') {
+            steps {
+                bat '.\\venv\\Scripts\\python app.py'  // Exécute le script Python
+            }
+        }
+        stage('Notify') {
+            steps {
+                script {
+                    def result = currentBuild.result ?: 'SUCCESS'
+                    emailext subject: "Jenkins Build: ${result}",
+                        body: "Build Status: ${result}\nVoir Jenkins: ${env.BUILD_URL}",
+                        to: 'dakar08octobre2024@gmail.com'
+                }
+            }
+        }
     }
- 
-    post { 
-        success { 
-            emailext subject: "Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Le build de ${env.JOB_NAME} a réussi.\nConsultez les logs ici: ${env.BUILD_URL}",
-                    recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-                    to: 'dakaroctobre2024@gmail.com'
-        } 
-        failure { 
-            emailext subject: "Build FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Le build de ${env.JOB_NAME} a échoué.\nConsultez les logs ici: ${env.BUILD_URL}",
-                    recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-                    to: 'dakaroctobre2024@gmail.com'
-        } 
+    post {
+        failure {
+            emailext subject: "Échec du build Jenkins",
+                body: "Échec du pipeline : ${env.BUILD_URL}",
+                to: 'dakar08octobre2024@gmail.com'
+        }
     }
-
-    }
+}
