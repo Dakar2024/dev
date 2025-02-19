@@ -1,5 +1,10 @@
 pipeline { 
     agent any
+
+    environnement {
+        VENV_DIR="venv"
+    }
+
     stages { 
         stage('Checkout') { 
             steps { 
